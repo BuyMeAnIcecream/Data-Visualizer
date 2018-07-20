@@ -124,7 +124,60 @@ GLuint LoadShaders(const char * vertex_file_path, const char * fragment_file_pat
 	return ProgramID;
 }
 
+struct Point {
+	long double time;
+	long double x;
+	long double y;
+	long double z;
 
+
+	Point* next;
+
+	Point(long double t, long double X, long double Y, long double Z)
+	{
+		time = t;
+		x = X;
+		y = Y;
+		z = Z;
+		next = nullptr;
+	}
+};
+
+Point* head;
+Point* currentPoint;
+
+
+#include <streambuf>
+#include <cerrno>
+#include <iomanip>      // std::setprecision
+
+
+std::string get_file_contents(const char *filename)
+{
+	std::ifstream in(filename, std::ios::in | std::ios::binary);
+	if (in)
+	{
+		return(std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>()));
+	}
+	throw(errno);
+}
+void removeCharsFromString(string &str, char* charsToRemove) {
+	for (unsigned int i = 0; i < strlen(charsToRemove); ++i) {
+		str.erase(remove(str.begin(), str.end(), charsToRemove[i]), str.end());
+	}
+}
+
+double grabDouble(string &from)
+{
+	size_t indexOfNextWS = from.find(' ');
+	string token = from.substr(0, indexOfNextWS);
+
+	std::string::size_type sz;
+	long double grabbedDoub = std::stod(token, &sz);
+	if (from.length() > indexOfNextWS + 1)
+		from.erase(0, indexOfNextWS + 1);
+	return grabbedDoub;
+}
 // settings
 const unsigned int SCR_WIDTH = 1024;
 const unsigned int SCR_HEIGHT = 768;
@@ -145,6 +198,43 @@ void processInput(GLFWwindow *window);
 
 int main(void)
 {
+	string input = get_file_contents("input.json");
+
+	size_t pos = 0;
+	removeCharsFromString(input, "[],");
+	long double t = grabDouble(input);
+	long double x = grabDouble(input);
+	long double y = grabDouble(input);
+	long double z = grabDouble(input);
+	head = new Point(t, x, y, z);
+	currentPoint = head;
+
+
+	size_t listLength = 1;
+
+
+	cout << std::setprecision(20);
+	do
+	{
+		t = grabDouble(input);
+		x = grabDouble(input);
+		y = grabDouble(input);
+		z = grabDouble(input);
+		currentPoint->next = new Point(t, x, y, z);
+		currentPoint = currentPoint->next;
+		listLength++;
+	} while (pos = input.find(' ') != std::string::npos);
+
+	currentPoint = head;
+//	cout << "time: " << currentPoint->time << " x: " << currentPoint->x << " y: " << currentPoint->y << " z: " << currentPoint->z << '\n';
+	while (currentPoint->next != nullptr)
+	{
+		currentPoint = currentPoint->next;
+//		cout << "time: " << currentPoint->time << " x: " << currentPoint->x << " y: " << currentPoint->y << " z: " << currentPoint->z << '\n';
+	}
+
+//	cout << input << '\n';
+
 	// Initialise GLFW
 	if (!glfwInit())
 	{
@@ -205,8 +295,8 @@ int main(void)
 
 											   // Our vertices. Tree consecutive floats give a 3D vertex; Three consecutive vertices give a triangle.
 											   // A cube has 6 faces with 2 triangles each, so this makes 6*2=12 triangles, and 12*3 vertices
-	static const GLfloat g_vertex_buffer_data[] = {
-		-1.0f,-1.0f,-1.0f,
+/*	static const GLfloat g_vertex_buffer_data[] = {
+		-10.0f,-1.0f,-1.0f,
 		-1.0f,-1.0f, 1.0f,
 		-1.0f, 1.0f, 1.0f,
 		1.0f, 1.0f,-1.0f,
@@ -243,7 +333,84 @@ int main(void)
 		-1.0f, 1.0f, 1.0f,
 		1.0f,-1.0f, 1.0f
 	};
+	*/
+	std::vector<float> g_vertex_buffer_data;
+	std::vector<float> g_color_buffer_data;
+	
+	//I assumed MAX car speed is 280 km/hour, which is
+	float const maxSpeed = 77.77778; // m/s
+	
+	float const minSpeed = 0;
+	float const offsetX = 0.02f;
+	float const offsetY = 0.04f;
+	float prevX = 0;
+	float prevY = 0;
+	float prevZ = 0;
+	//main location coord
+	g_vertex_buffer_data.push_back(0);
+	g_vertex_buffer_data.push_back(0);
+	g_vertex_buffer_data.push_back(0);
+	//support coord 1
+	g_vertex_buffer_data.push_back(-offsetX);
+	g_vertex_buffer_data.push_back(-offsetY);
+	g_vertex_buffer_data.push_back(0);
+	//support coord 2
+	g_vertex_buffer_data.push_back(offsetX);
+	g_vertex_buffer_data.push_back(-offsetY);
+	g_vertex_buffer_data.push_back(0);
 
+	g_color_buffer_data.push_back(0.5f);
+	g_color_buffer_data.push_back(0.5f);
+	g_color_buffer_data.push_back(0.5f);
+
+	g_color_buffer_data.push_back(0.5f);
+	g_color_buffer_data.push_back(0.5f);
+	g_color_buffer_data.push_back(0.5f);
+
+	g_color_buffer_data.push_back(0.5f);
+	g_color_buffer_data.push_back(0.5f);
+	g_color_buffer_data.push_back(0.5f);
+
+	currentPoint = head->next;
+	Point* prevPoint = head;
+	while (currentPoint != nullptr) {
+		prevX += (float)(currentPoint->x - prevPoint->x);
+		prevY += (float)(currentPoint->y - prevPoint->y);
+		prevZ += (float)(currentPoint->z - prevPoint->z);
+		//main coord
+		g_vertex_buffer_data.push_back(prevX); //subtract previous corresponding coordinate from each current and add to the array
+		g_vertex_buffer_data.push_back(prevY);
+		g_vertex_buffer_data.push_back(prevZ);
+		//support coord 1
+		g_vertex_buffer_data.push_back(prevX - offsetX);
+		g_vertex_buffer_data.push_back(prevY - offsetY);
+		g_vertex_buffer_data.push_back(prevZ);
+		//support coord 2
+		g_vertex_buffer_data.push_back(prevX + offsetX);
+		g_vertex_buffer_data.push_back(prevY - offsetY);
+		g_vertex_buffer_data.push_back(prevZ);
+		
+		g_color_buffer_data.push_back(0.5f);
+		g_color_buffer_data.push_back(0.1f);
+		g_color_buffer_data.push_back(0.4f);
+
+		g_color_buffer_data.push_back(0.8f);
+		g_color_buffer_data.push_back(0.2f);
+		g_color_buffer_data.push_back(0.5f);
+
+		g_color_buffer_data.push_back(0.9f);
+		g_color_buffer_data.push_back(0.1f);
+		g_color_buffer_data.push_back(0.3f);
+
+		prevPoint = currentPoint;
+		currentPoint = currentPoint->next; 
+	}
+	cout<< g_vertex_buffer_data.size();
+	for (int i = 2; i < g_vertex_buffer_data.size(); i+=3)
+	{
+		cout << " X: " << g_vertex_buffer_data[i-2]<<" Y: "<< g_vertex_buffer_data[i-1]<< " Z: "<< g_vertex_buffer_data[i] << '\n';
+	}
+	/*
 	// One color for each vertex. They were generated randomly.
 	static const GLfloat g_color_buffer_data[] = {
 		0.99f,  0.771f,  0.014f,
@@ -283,38 +450,16 @@ int main(void)
 		0.820f,  0.883f,  0.371f,
 		0.982f,  0.099f,  0.879f
 	};
-
+	*/
 	GLuint vertexbuffer;
 	glGenBuffers(1, &vertexbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * g_vertex_buffer_data.size(), &g_vertex_buffer_data[0], GL_STATIC_DRAW);
 
 	GLuint colorbuffer;
 	glGenBuffers(1, &colorbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(g_color_buffer_data), g_color_buffer_data, GL_STATIC_DRAW);
-
-	////// Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
-	//glm::mat4 Projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
-	////// Camera matrix
-	//glm::mat4 View = glm::lookAt(
-	//	glm::vec3(4, 3, -3), // Camera is at (4,3,-3), in World Space
-	//	glm::vec3(0, 0, 0), // and looks at the origin
-	//	glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
-	//);
-	////// Model matrix : an identity matrix (model will be at the origin)
-	//glm::mat4 Model = glm::mat4(1.0f);
-	////// Our ModelViewProjection : multiplication of our 3 matrices
-	//glm::mat4 MVP = Projection * View * Model; // Remember, matrix multiplication is the other way around
-
-
-	//glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-	//glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-	//glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-	//View = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-	////initial position is center of the screen
-	//
-
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * g_color_buffer_data.size(), &g_color_buffer_data[0], GL_STATIC_DRAW);
 
 
 	do {
@@ -333,7 +478,7 @@ int main(void)
 		glm::mat4 View = camera.GetViewMatrix();
 		//// Model matrix : an identity matrix (model will be at the origin)
 		glm::mat4 Model = glm::mat4(1.0f);
-
+		
 		glm::mat4 MVP = Projection * View * Model;
 //		cam.ProcessKeyboard(Camera_Movement::FORWARD,deltaTime);
 		//listen to the input
@@ -407,8 +552,8 @@ int main(void)
 		);
 
 		// Draw the triangle !
-		glDrawArrays(GL_TRIANGLES, 0, 12 * 3); // 12*3 indices starting at 0 -> 12 triangles
-
+		glDrawArrays(GL_TRIANGLES, 0, g_vertex_buffer_data.size()); // 12*3 indices starting at 0 -> 12 triangles
+		
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
 
