@@ -12,6 +12,7 @@
 #include <sstream>
 #include <string.h>
 
+
 using namespace std;
 
 // Include GLEW
@@ -196,9 +197,14 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 
+
+
 int main(void)
 {
-	string input = get_file_contents("input.json");
+	
+//	string input = get_file_contents("input.json");
+	
+	string input = get_file_contents("data/input.json");
 
 	size_t pos = 0;
 	removeCharsFromString(input, "[],");
@@ -293,71 +299,70 @@ int main(void)
 	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
 
 
-											   // Our vertices. Tree consecutive floats give a 3D vertex; Three consecutive vertices give a triangle.
-											   // A cube has 6 faces with 2 triangles each, so this makes 6*2=12 triangles, and 12*3 vertices
-/*	static const GLfloat g_vertex_buffer_data[] = {
-		-10.0f,-1.0f,-1.0f,
-		-1.0f,-1.0f, 1.0f,
-		-1.0f, 1.0f, 1.0f,
-		1.0f, 1.0f,-1.0f,
-		-1.0f,-1.0f,-1.0f,
-		-1.0f, 1.0f,-1.0f,
-		1.0f,-1.0f, 1.0f,
-		-1.0f,-1.0f,-1.0f,
-		1.0f,-1.0f,-1.0f,
-		1.0f, 1.0f,-1.0f,
-		1.0f,-1.0f,-1.0f,
-		-1.0f,-1.0f,-1.0f,
-		-1.0f,-1.0f,-1.0f,
-		-1.0f, 1.0f, 1.0f,
-		-1.0f, 1.0f,-1.0f,
-		1.0f,-1.0f, 1.0f,
-		-1.0f,-1.0f, 1.0f,
-		-1.0f,-1.0f,-1.0f,
-		-1.0f, 1.0f, 1.0f,
-		-1.0f,-1.0f, 1.0f,
-		1.0f,-1.0f, 1.0f,
-		1.0f, 1.0f, 1.0f,
-		1.0f,-1.0f,-1.0f,
-		1.0f, 1.0f,-1.0f,
-		1.0f,-1.0f,-1.0f,
-		1.0f, 1.0f, 1.0f,
-		1.0f,-1.0f, 1.0f,
-		1.0f, 1.0f, 1.0f,
-		1.0f, 1.0f,-1.0f,
-		-1.0f, 1.0f,-1.0f,
-		1.0f, 1.0f, 1.0f,
-		-1.0f, 1.0f,-1.0f,
-		-1.0f, 1.0f, 1.0f,
-		1.0f, 1.0f, 1.0f,
-		-1.0f, 1.0f, 1.0f,
-		1.0f,-1.0f, 1.0f
-	};
-	*/
 	std::vector<float> g_vertex_buffer_data;
 	std::vector<float> g_color_buffer_data;
 	
-	//I assumed MAX car speed is 280 km/hour, which is
-	float const maxSpeed = 77.77778; // m/s
+	//I assumed MAX car speed is 60 km/hour, which is
+	float const maxSpeed = 16.6667f ; // m/s 
 	
 	float const minSpeed = 0;
-	float const offsetX = 0.02f;
-	float const offsetY = 0.04f;
-	float prevX = 0;
-	float prevY = 0;
-	float prevZ = 0;
+	
+	glm::vec3 const minColor(0.329, 0.066, 0.450); //brown
+	glm::vec3 const maxColor(1, 0.823, 0.101); //purple
+	float const offsetX = 0.06f;
+	float const offsetY = 0.12f;
+	//current triangle 
+	glm::vec3 curMain = glm::vec3(0, 0, 0);
+	glm::vec3 curSup1 = glm::vec3(0, 0, 0);
+	glm::vec3 curSup2 = glm::vec3(0, 0, 0);
+	//support point to connect with current triangle
+	glm::vec3 prevMain = glm::vec3(0, 0, 0);
+	glm::vec3 prevSup1 = glm::vec3(0, 0, 0); //previous support point 1
+	glm::vec3 prevSup2 = glm::vec3(0, 0, 0); //previous support point 2
+
+	glm::vec3 velocity = glm::vec3(0, 0, 0);
+	glm::vec3 rotation = glm::vec3(0, 0, 0);
+	glm::vec3 unitRot = glm::vec3(0, 0, 0);
+
+	
+
+	//rotating first triang
+	curMain.x = prevMain.x + (float)(head->next->x - head->x);
+	curMain.y = prevMain.y + (float)(head->next->y - head->y);
+	curMain.z = prevMain.z + (float)(head->next->z - head->z);
+	velocity = glm::vec3(curMain.x - prevMain.x, curMain.y - prevMain.y, curMain.z - prevMain.z);
+	rotation = glm::cross(velocity, glm::vec3(0, 1.0f, 0));
+	unitRot = glm::normalize(rotation);
+
 	//main location coord
-	g_vertex_buffer_data.push_back(0);
-	g_vertex_buffer_data.push_back(0);
-	g_vertex_buffer_data.push_back(0);
+//	g_vertex_buffer_data.push_back(0);
+//	g_vertex_buffer_data.push_back(0);
+//	g_vertex_buffer_data.push_back(0);
+	
 	//support coord 1
-	g_vertex_buffer_data.push_back(-offsetX);
-	g_vertex_buffer_data.push_back(-offsetY);
-	g_vertex_buffer_data.push_back(0);
+	curSup1.x = -unitRot.x * offsetX;
+	curSup1.y = -offsetY;
+	curSup1.z = -unitRot.z * offsetX;
+	
+	//adding to vertex array
+//	g_vertex_buffer_data.push_back(curSup1.x);
+//	g_vertex_buffer_data.push_back(curSup1.y);
+//	g_vertex_buffer_data.push_back(curSup1.z);
+
 	//support coord 2
-	g_vertex_buffer_data.push_back(offsetX);
-	g_vertex_buffer_data.push_back(-offsetY);
-	g_vertex_buffer_data.push_back(0);
+	curSup2.x = unitRot.x * offsetX;
+	curSup2.y = -offsetY;
+	curSup2.z = unitRot.z * offsetX;
+
+	//adding to vertex array
+//	g_vertex_buffer_data.push_back(curSup2.x);
+//	g_vertex_buffer_data.push_back(curSup2.y);
+//	g_vertex_buffer_data.push_back(curSup2.z);
+
+
+	/*g_color_buffer_data.push_back(0.5f);
+	g_color_buffer_data.push_back(0.5f);
+	g_color_buffer_data.push_back(0.5f);
 
 	g_color_buffer_data.push_back(0.5f);
 	g_color_buffer_data.push_back(0.5f);
@@ -365,92 +370,146 @@ int main(void)
 
 	g_color_buffer_data.push_back(0.5f);
 	g_color_buffer_data.push_back(0.5f);
-	g_color_buffer_data.push_back(0.5f);
-
-	g_color_buffer_data.push_back(0.5f);
-	g_color_buffer_data.push_back(0.5f);
-	g_color_buffer_data.push_back(0.5f);
+	g_color_buffer_data.push_back(0.5f);*/
 
 	currentPoint = head->next;
+
 	Point* prevPoint = head;
+	
 	while (currentPoint != nullptr) {
-		prevX += (float)(currentPoint->x - prevPoint->x);
-		prevY += (float)(currentPoint->y - prevPoint->y);
-		prevZ += (float)(currentPoint->z - prevPoint->z);
-		//main coord
-		g_vertex_buffer_data.push_back(prevX); //subtract previous corresponding coordinate from each current and add to the array
-		g_vertex_buffer_data.push_back(prevY);
-		g_vertex_buffer_data.push_back(prevZ);
+		//main value of location
+		curMain.x = prevMain.x + (float)(currentPoint->x - prevPoint->x);
+		curMain.y = prevMain.y + (float)(currentPoint->y - prevPoint->y);
+		curMain.z = prevMain.z + (float)(currentPoint->z - prevPoint->z);
+
+		//we want every triangle to be rotated in the direction of following one 
+		velocity = glm::vec3(curMain.x - prevMain.x, curMain.y - prevMain.y, curMain.z - prevMain.z);
+		rotation = glm::cross(velocity, glm::vec3(0, 1.0f, 0));
+		unitRot = glm::normalize(rotation);
+
 		//support coord 1
-		g_vertex_buffer_data.push_back(prevX - offsetX);
-		g_vertex_buffer_data.push_back(prevY - offsetY);
-		g_vertex_buffer_data.push_back(prevZ);
+		curSup1.x = curMain.x - unitRot.x * offsetX;
+		curSup1.y = curMain.y - offsetY;
+		curSup1.z = curMain.z - unitRot.z * offsetX;
+
 		//support coord 2
-		g_vertex_buffer_data.push_back(prevX + offsetX);
-		g_vertex_buffer_data.push_back(prevY - offsetY);
-		g_vertex_buffer_data.push_back(prevZ);
+		curSup2.x = curMain.x + unitRot.x * offsetX;
+		curSup2.y = curMain.y - offsetY;
+		curSup2.z = curMain.z + unitRot.z * offsetX;
+
+/*	
+		//main coord
+		g_vertex_buffer_data.push_back(curMain.x); 
+		g_vertex_buffer_data.push_back(curMain.y);
+		g_vertex_buffer_data.push_back(curMain.z);
+
+		//adding to support coord 1 vertex array
+		g_vertex_buffer_data.push_back(curSup1.x);
+		g_vertex_buffer_data.push_back(curSup1.y);
+		g_vertex_buffer_data.push_back(curSup1.z);
+
+		//adding support coord 2 to vertex array
+		g_vertex_buffer_data.push_back(curSup2.x);
+		g_vertex_buffer_data.push_back(curSup2.y);
+		g_vertex_buffer_data.push_back(curSup2.z);
+*/
+		//SIDE ONE
+		g_vertex_buffer_data.push_back(curMain.x); //cur main
+		g_vertex_buffer_data.push_back(curMain.y);
+		g_vertex_buffer_data.push_back(curMain.z);
 		
-		g_color_buffer_data.push_back(0.5f);
-		g_color_buffer_data.push_back(0.1f);
-		g_color_buffer_data.push_back(0.4f);
+		g_vertex_buffer_data.push_back(prevMain.x); //prev main
+		g_vertex_buffer_data.push_back(prevMain.y);
+		g_vertex_buffer_data.push_back(prevMain.z);
+		
+		g_vertex_buffer_data.push_back(prevSup1.x); // prev sup 1
+		g_vertex_buffer_data.push_back(prevSup1.y);
+		g_vertex_buffer_data.push_back(prevSup1.z);
 
-		g_color_buffer_data.push_back(0.8f);
-		g_color_buffer_data.push_back(0.2f);
-		g_color_buffer_data.push_back(0.5f);
+		g_vertex_buffer_data.push_back(curMain.x); // cur main
+		g_vertex_buffer_data.push_back(curMain.y);
+		g_vertex_buffer_data.push_back(curMain.z);
 
-		g_color_buffer_data.push_back(0.9f);
-		g_color_buffer_data.push_back(0.1f);
-		g_color_buffer_data.push_back(0.3f);
+		g_vertex_buffer_data.push_back(prevSup1.x); // prev sup 1
+		g_vertex_buffer_data.push_back(prevSup1.y);
+		g_vertex_buffer_data.push_back(prevSup1.z);
+
+		g_vertex_buffer_data.push_back(curSup1.x); // cur sup 1
+		g_vertex_buffer_data.push_back(curSup1.y);
+		g_vertex_buffer_data.push_back(curSup1.z);
+
+		//SIDE TWO
+		g_vertex_buffer_data.push_back(curMain.x); //cur main
+		g_vertex_buffer_data.push_back(curMain.y);
+		g_vertex_buffer_data.push_back(curMain.z);
+
+		g_vertex_buffer_data.push_back(prevMain.x); //prev main
+		g_vertex_buffer_data.push_back(prevMain.y);
+		g_vertex_buffer_data.push_back(prevMain.z);
+
+		g_vertex_buffer_data.push_back(prevSup2.x); // prev sup 2
+		g_vertex_buffer_data.push_back(prevSup2.y);
+		g_vertex_buffer_data.push_back(prevSup2.z);
+
+		g_vertex_buffer_data.push_back(curMain.x); // cur main
+		g_vertex_buffer_data.push_back(curMain.y);
+		g_vertex_buffer_data.push_back(curMain.z);
+
+		g_vertex_buffer_data.push_back(prevSup2.x); // prev sup 2
+		g_vertex_buffer_data.push_back(prevSup2.y);
+		g_vertex_buffer_data.push_back(prevSup2.z);
+
+		g_vertex_buffer_data.push_back(curSup2.x); // cur sup 2
+		g_vertex_buffer_data.push_back(curSup2.y);
+		g_vertex_buffer_data.push_back(curSup2.z);
+
+		//BOTTOM
+
+		g_vertex_buffer_data.push_back(curSup1.x); //cur sup 1
+		g_vertex_buffer_data.push_back(curSup1.y);
+		g_vertex_buffer_data.push_back(curSup1.z);
+
+		g_vertex_buffer_data.push_back(prevSup1.x); //prev sup 1
+		g_vertex_buffer_data.push_back(prevSup1.y);
+		g_vertex_buffer_data.push_back(prevSup1.z);
+
+		g_vertex_buffer_data.push_back(prevSup2.x); // prev sup 2
+		g_vertex_buffer_data.push_back(prevSup2.y);
+		g_vertex_buffer_data.push_back(prevSup2.z);
+
+		g_vertex_buffer_data.push_back(curSup1.x); // cur sup 1
+		g_vertex_buffer_data.push_back(curSup1.y);
+		g_vertex_buffer_data.push_back(curSup1.z);
+
+		g_vertex_buffer_data.push_back(prevSup2.x); // prev sup 2
+		g_vertex_buffer_data.push_back(prevSup2.y);
+		g_vertex_buffer_data.push_back(prevSup2.z);
+
+		g_vertex_buffer_data.push_back(curSup2.x); // cur sup 2
+		g_vertex_buffer_data.push_back(curSup2.y);
+		g_vertex_buffer_data.push_back(curSup2.z);
+
+		//COLOR COLOR COLOR
+
+		float velLerpVal = (glm::length(velocity) * 10 - minSpeed) / (maxSpeed - minSpeed); //~10Hz to m/s
+//		cout << "Speed: " << (glm::length(velocity) * 10 - minSpeed)  / (maxSpeed - minSpeed) << '\n';
+		glm::vec3 curColor = ((maxColor - minColor) * velLerpVal) + minColor;
+		
+		for (int i = 0; i < 18; i++) 
+		{
+			g_color_buffer_data.push_back(curColor.x);
+			g_color_buffer_data.push_back(curColor.y);
+			g_color_buffer_data.push_back(curColor.z);
+		}
 
 		prevPoint = currentPoint;
 		currentPoint = currentPoint->next; 
+
+		prevMain = curMain;
+		prevSup1 = curSup1;
+		prevSup2 = curSup2;
 	}
-	cout<< g_vertex_buffer_data.size();
-	for (int i = 2; i < g_vertex_buffer_data.size(); i+=3)
-	{
-		cout << " X: " << g_vertex_buffer_data[i-2]<<" Y: "<< g_vertex_buffer_data[i-1]<< " Z: "<< g_vertex_buffer_data[i] << '\n';
-	}
-	/*
-	// One color for each vertex. They were generated randomly.
-	static const GLfloat g_color_buffer_data[] = {
-		0.99f,  0.771f,  0.014f,
-		0.99f,  0.99f,  0.436f,
-		0.327f,  0.99f,  0.844f,
-		0.822f,  0.99f,  0.201f,
-		0.435f,  0.602f,  0.99,
-		0.99,  0.99,  0.99f,
-		0.597f,  0.770f,  0.761f,
-		0.99,  0.436f,  0.730f,
-		0.359f,  0.583f,  0.152f,
-		0.483f,  0.596f,  0.789f,
-		0.559f,  0.861f,  0.639f,
-		0.195f,  0.548f,  0.859f,
-		0.99f, 0.99f,  0.99f,
-		0.99f, 0.99,  0.99f,
-		0.99f,  0.99f,  0.99f,
-		0.99f,  0.99f,  0.99f,
-		0.99f,  0.99f,0.99f,
-		0.99f, 0.99f,  0.99f,
-		0.997f,  0.513f,  0.064f,
-		0.945f,  0.719f,  0.592f,
-		0.543f,  0.021f,  0.978f,
-		0.279f,  0.317f,  0.505f,
-		0.167f,  0.620f,  0.077f,
-		0.347f,  0.857f,  0.137f,
-		0.055f,  0.953f,  0.042f,
-		0.714f,  0.505f,  0.345f,
-		0.783f,  0.290f,  0.734f,
-		0.99f,  0.99f,  0.99f,
-		0.99f,  0.99f,  0.99f,
-		0.99f,  0.99f,  0.99f,
-		0.99f,  0.99f,  0.99f,
-		0.99f,  0.99f,  0.99f,
-		0.99f,  0.99f,  0.99f,
-		0.673f,  0.211f,  0.457f,
-		0.820f,  0.883f,  0.371f,
-		0.982f,  0.099f,  0.879f
-	};
-	*/
+
 	GLuint vertexbuffer;
 	glGenBuffers(1, &vertexbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
@@ -480,43 +539,7 @@ int main(void)
 		glm::mat4 Model = glm::mat4(1.0f);
 		
 		glm::mat4 MVP = Projection * View * Model;
-//		cam.ProcessKeyboard(Camera_Movement::FORWARD,deltaTime);
-		//listen to the input
 
-		//MOVE CAMERA
-/*		
-//		glfwSetCursorPosCallback(window, mouse_callback);
-		
-		processInput(window);
-
-		//cam position
-		glm::vec3 cameraPos = glm::vec3(4.0f, 3.0f, -3.0f);
-		//cam orientation
-		glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-	//	glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-		
-		
-		//cam direction
-		glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-		glm::vec3 cameraDirection = glm::normalize(cameraPos - cameraTarget);
-		//right axis
-		glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-		glm::vec3 cameraRight = glm::normalize(glm::cross(up, cameraDirection));
-		//up axis
-		glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight);
-		//rotate
-		float radius = 10.0f;
-		float camX = sin(glfwGetTime()) * radius;
-		float camZ = cos(glfwGetTime()) * radius;
-*/
-//		glm::mat4 View;
-//		view = glm::lookAt(glm::vec3(camX, 3.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
-		
-//		View = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-		//mod view proj
-//		MVP = Projection * View * Model;
-
-		
 		// Clear the screen
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
