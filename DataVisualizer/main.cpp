@@ -35,31 +35,12 @@ using namespace glm;
 #include "Shader.h"
 
 
-struct Point {
-	long double time;
-	long double x;
-	long double y;
-	long double z;
 
-
-	Point* next;
-
-	Point(long double t, long double X, long double Y, long double Z)
-	{
-		time = t;
-		x = X;
-		y = Y;
-		z = Z;
-		next = nullptr;
-	}
-};
 
 Point* head;
 Point* currentPoint;
-
-
-
-
+vector <glm::vec3> cameraSpots; //store pointers to first points of path, to allow users to
+size_t cameraSpotIndex = 0;
 // settings
 const unsigned int SCR_WIDTH = 1024;
 const unsigned int SCR_HEIGHT = 768;
@@ -78,50 +59,20 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 
-
-
 int main(void)
 {
-	
-//	string input = get_file_contents("input.json");
-	
-	string input = get_file_contents("data/input.json");
-
-	size_t pos = 0;
-	removeCharsFromString(input, "[],");
-	long double t = grabDouble(input);
-	long double x = grabDouble(input);
-	long double y = grabDouble(input);
-	long double z = grabDouble(input);
-	head = new Point(t, x, y, z);
-	currentPoint = head;
-
-
-	size_t listLength = 1;
-
-
+	//how else do I debug all these beatiful tiny fractions of space... 
 	cout << std::setprecision(20);
-	do
-	{
-		t = grabDouble(input);
-		x = grabDouble(input);
-		y = grabDouble(input);
-		z = grabDouble(input);
-		currentPoint->next = new Point(t, x, y, z);
-		currentPoint = currentPoint->next;
-		listLength++;
-	} while (pos = input.find(' ') != std::string::npos);
+	string folderPath = ("data/");
+	head = parseFolderContent(folderPath);
 
 	currentPoint = head;
-//	cout << "time: " << currentPoint->time << " x: " << currentPoint->x << " y: " << currentPoint->y << " z: " << currentPoint->z << '\n';
-	while (currentPoint->next != nullptr)
+/*	while (currentPoint->next != nullptr)
 	{
 		currentPoint = currentPoint->next;
-//		cout << "time: " << currentPoint->time << " x: " << currentPoint->x << " y: " << currentPoint->y << " z: " << currentPoint->z << '\n';
+		cout << "time: " << currentPoint->time << " x: " << currentPoint->x << " y: " << currentPoint->y << " z: " << currentPoint->z << '\n';
 	}
-
-//	cout << input << '\n';
-
+*/
 	// Initialise GLFW
 	if (!glfwInit())
 	{
@@ -190,13 +141,19 @@ int main(void)
 	
 	glm::vec3 const minColor(0.329, 0.066, 0.450); //brown
 	glm::vec3 const maxColor(1, 0.823, 0.101); //purple
-	float const offsetX = 0.06f;
-	float const offsetY = 0.12f;
-	//current triangle 
+//	float const offsetX = 0.06f;
+//	float const offsetY = 0.12f;
+
+	float const offsetX = 1.0f;
+	float const offsetY = 2.0f;
+	//current triangle
+	//actual point
 	glm::vec3 curMain = glm::vec3(0, 0, 0);
+	//support points to make a triangle
 	glm::vec3 curSup1 = glm::vec3(0, 0, 0);
 	glm::vec3 curSup2 = glm::vec3(0, 0, 0);
-	//support point to connect with current triangle
+
+	//previous triangle to draw polygons between
 	glm::vec3 prevMain = glm::vec3(0, 0, 0);
 	glm::vec3 prevSup1 = glm::vec3(0, 0, 0); //previous support point 1
 	glm::vec3 prevSup2 = glm::vec3(0, 0, 0); //previous support point 2
@@ -204,65 +161,18 @@ int main(void)
 	glm::vec3 velocity = glm::vec3(0, 0, 0);
 	glm::vec3 rotation = glm::vec3(0, 0, 0);
 	glm::vec3 unitRot = glm::vec3(0, 0, 0);
-
 	
-
-	//rotating first triang
-	curMain.x = prevMain.x + (float)(head->next->x - head->x);
-	curMain.y = prevMain.y + (float)(head->next->y - head->y);
-	curMain.z = prevMain.z + (float)(head->next->z - head->z);
-	velocity = glm::vec3(curMain.x - prevMain.x, curMain.y - prevMain.y, curMain.z - prevMain.z);
-	rotation = glm::cross(velocity, glm::vec3(0, 1.0f, 0));
-	unitRot = glm::normalize(rotation);
-
-	//main location coord
-//	g_vertex_buffer_data.push_back(0);
-//	g_vertex_buffer_data.push_back(0);
-//	g_vertex_buffer_data.push_back(0);
-	
-	//support coord 1
-	curSup1.x = -unitRot.x * offsetX;
-	curSup1.y = -offsetY;
-	curSup1.z = -unitRot.z * offsetX;
-	
-	//adding to vertex array
-//	g_vertex_buffer_data.push_back(curSup1.x);
-//	g_vertex_buffer_data.push_back(curSup1.y);
-//	g_vertex_buffer_data.push_back(curSup1.z);
-
-	//support coord 2
-	curSup2.x = unitRot.x * offsetX;
-	curSup2.y = -offsetY;
-	curSup2.z = unitRot.z * offsetX;
-
-	//adding to vertex array
-//	g_vertex_buffer_data.push_back(curSup2.x);
-//	g_vertex_buffer_data.push_back(curSup2.y);
-//	g_vertex_buffer_data.push_back(curSup2.z);
-
-
-	/*g_color_buffer_data.push_back(0.5f);
-	g_color_buffer_data.push_back(0.5f);
-	g_color_buffer_data.push_back(0.5f);
-
-	g_color_buffer_data.push_back(0.5f);
-	g_color_buffer_data.push_back(0.5f);
-	g_color_buffer_data.push_back(0.5f);
-
-	g_color_buffer_data.push_back(0.5f);
-	g_color_buffer_data.push_back(0.5f);
-	g_color_buffer_data.push_back(0.5f);*/
+	//move cam to the 1st point
 
 	currentPoint = head->next;
-
 	Point* prevPoint = head;
-	
+ 
 	while (currentPoint != nullptr) {
 		//main value of location
 		curMain.x = prevMain.x + (float)(currentPoint->x - prevPoint->x);
 		curMain.y = prevMain.y + (float)(currentPoint->y - prevPoint->y);
 		curMain.z = prevMain.z + (float)(currentPoint->z - prevPoint->z);
-
+	
 		//we want every triangle to be rotated in the direction of following one 
 		velocity = glm::vec3(curMain.x - prevMain.x, curMain.y - prevMain.y, curMain.z - prevMain.z);
 		rotation = glm::cross(velocity, glm::vec3(0, 1.0f, 0));
@@ -278,7 +188,7 @@ int main(void)
 		curSup2.y = curMain.y - offsetY;
 		curSup2.z = curMain.z + unitRot.z * offsetX;
 
-/*	
+	/*
 		//main coord
 		g_vertex_buffer_data.push_back(curMain.x); 
 		g_vertex_buffer_data.push_back(curMain.y);
@@ -294,102 +204,114 @@ int main(void)
 		g_vertex_buffer_data.push_back(curSup2.y);
 		g_vertex_buffer_data.push_back(curSup2.z);
 */
-		//SIDE ONE
-		g_vertex_buffer_data.push_back(curMain.x); //cur main
-		g_vertex_buffer_data.push_back(curMain.y);
-		g_vertex_buffer_data.push_back(curMain.z);
-		
-		g_vertex_buffer_data.push_back(prevMain.x); //prev main
-		g_vertex_buffer_data.push_back(prevMain.y);
-		g_vertex_buffer_data.push_back(prevMain.z);
-		
-		g_vertex_buffer_data.push_back(prevSup1.x); // prev sup 1
-		g_vertex_buffer_data.push_back(prevSup1.y);
-		g_vertex_buffer_data.push_back(prevSup1.z);
+		//don't render, if this is a new path
+//		if (!currentPoint->newPath)
+//		{
 
-		g_vertex_buffer_data.push_back(curMain.x); // cur main
-		g_vertex_buffer_data.push_back(curMain.y);
-		g_vertex_buffer_data.push_back(curMain.z);
+			//SIDE ONE
+			g_vertex_buffer_data.push_back(curMain.x); //cur main
+			g_vertex_buffer_data.push_back(curMain.y);
+			g_vertex_buffer_data.push_back(curMain.z);
 
-		g_vertex_buffer_data.push_back(prevSup1.x); // prev sup 1
-		g_vertex_buffer_data.push_back(prevSup1.y);
-		g_vertex_buffer_data.push_back(prevSup1.z);
+			g_vertex_buffer_data.push_back(prevMain.x); //prev main
+			g_vertex_buffer_data.push_back(prevMain.y);
+			g_vertex_buffer_data.push_back(prevMain.z);
 
-		g_vertex_buffer_data.push_back(curSup1.x); // cur sup 1
-		g_vertex_buffer_data.push_back(curSup1.y);
-		g_vertex_buffer_data.push_back(curSup1.z);
+			g_vertex_buffer_data.push_back(prevSup1.x); // prev sup 1
+			g_vertex_buffer_data.push_back(prevSup1.y);
+			g_vertex_buffer_data.push_back(prevSup1.z);
 
-		//SIDE TWO
-		g_vertex_buffer_data.push_back(curMain.x); //cur main
-		g_vertex_buffer_data.push_back(curMain.y);
-		g_vertex_buffer_data.push_back(curMain.z);
+			g_vertex_buffer_data.push_back(curMain.x); // cur main
+			g_vertex_buffer_data.push_back(curMain.y);
+			g_vertex_buffer_data.push_back(curMain.z);
 
-		g_vertex_buffer_data.push_back(prevMain.x); //prev main
-		g_vertex_buffer_data.push_back(prevMain.y);
-		g_vertex_buffer_data.push_back(prevMain.z);
+			g_vertex_buffer_data.push_back(prevSup1.x); // prev sup 1
+			g_vertex_buffer_data.push_back(prevSup1.y);
+			g_vertex_buffer_data.push_back(prevSup1.z);
 
-		g_vertex_buffer_data.push_back(prevSup2.x); // prev sup 2
-		g_vertex_buffer_data.push_back(prevSup2.y);
-		g_vertex_buffer_data.push_back(prevSup2.z);
+			g_vertex_buffer_data.push_back(curSup1.x); // cur sup 1
+			g_vertex_buffer_data.push_back(curSup1.y);
+			g_vertex_buffer_data.push_back(curSup1.z);
 
-		g_vertex_buffer_data.push_back(curMain.x); // cur main
-		g_vertex_buffer_data.push_back(curMain.y);
-		g_vertex_buffer_data.push_back(curMain.z);
+			//SIDE TWO
+			g_vertex_buffer_data.push_back(curMain.x); //cur main
+			g_vertex_buffer_data.push_back(curMain.y);
+			g_vertex_buffer_data.push_back(curMain.z);
 
-		g_vertex_buffer_data.push_back(prevSup2.x); // prev sup 2
-		g_vertex_buffer_data.push_back(prevSup2.y);
-		g_vertex_buffer_data.push_back(prevSup2.z);
+			g_vertex_buffer_data.push_back(prevMain.x); //prev main
+			g_vertex_buffer_data.push_back(prevMain.y);
+			g_vertex_buffer_data.push_back(prevMain.z);
 
-		g_vertex_buffer_data.push_back(curSup2.x); // cur sup 2
-		g_vertex_buffer_data.push_back(curSup2.y);
-		g_vertex_buffer_data.push_back(curSup2.z);
+			g_vertex_buffer_data.push_back(prevSup2.x); // prev sup 2
+			g_vertex_buffer_data.push_back(prevSup2.y);
+			g_vertex_buffer_data.push_back(prevSup2.z);
 
-		//BOTTOM
+			g_vertex_buffer_data.push_back(curMain.x); // cur main
+			g_vertex_buffer_data.push_back(curMain.y);
+			g_vertex_buffer_data.push_back(curMain.z);
 
-		g_vertex_buffer_data.push_back(curSup1.x); //cur sup 1
-		g_vertex_buffer_data.push_back(curSup1.y);
-		g_vertex_buffer_data.push_back(curSup1.z);
+			g_vertex_buffer_data.push_back(prevSup2.x); // prev sup 2
+			g_vertex_buffer_data.push_back(prevSup2.y);
+			g_vertex_buffer_data.push_back(prevSup2.z);
 
-		g_vertex_buffer_data.push_back(prevSup1.x); //prev sup 1
-		g_vertex_buffer_data.push_back(prevSup1.y);
-		g_vertex_buffer_data.push_back(prevSup1.z);
+			g_vertex_buffer_data.push_back(curSup2.x); // cur sup 2
+			g_vertex_buffer_data.push_back(curSup2.y);
+			g_vertex_buffer_data.push_back(curSup2.z);
 
-		g_vertex_buffer_data.push_back(prevSup2.x); // prev sup 2
-		g_vertex_buffer_data.push_back(prevSup2.y);
-		g_vertex_buffer_data.push_back(prevSup2.z);
+			//BOTTOM
 
-		g_vertex_buffer_data.push_back(curSup1.x); // cur sup 1
-		g_vertex_buffer_data.push_back(curSup1.y);
-		g_vertex_buffer_data.push_back(curSup1.z);
+			g_vertex_buffer_data.push_back(curSup1.x); //cur sup 1
+			g_vertex_buffer_data.push_back(curSup1.y);
+			g_vertex_buffer_data.push_back(curSup1.z);
 
-		g_vertex_buffer_data.push_back(prevSup2.x); // prev sup 2
-		g_vertex_buffer_data.push_back(prevSup2.y);
-		g_vertex_buffer_data.push_back(prevSup2.z);
+			g_vertex_buffer_data.push_back(prevSup1.x); //prev sup 1
+			g_vertex_buffer_data.push_back(prevSup1.y);
+			g_vertex_buffer_data.push_back(prevSup1.z);
 
-		g_vertex_buffer_data.push_back(curSup2.x); // cur sup 2
-		g_vertex_buffer_data.push_back(curSup2.y);
-		g_vertex_buffer_data.push_back(curSup2.z);
+			g_vertex_buffer_data.push_back(prevSup2.x); // prev sup 2
+			g_vertex_buffer_data.push_back(prevSup2.y);
+			g_vertex_buffer_data.push_back(prevSup2.z);
 
-		//COLOR COLOR COLOR
+			g_vertex_buffer_data.push_back(curSup1.x); // cur sup 1
+			g_vertex_buffer_data.push_back(curSup1.y);
+			g_vertex_buffer_data.push_back(curSup1.z);
 
-		float velLerpVal = (glm::length(velocity) * 10 - minSpeed) / (maxSpeed - minSpeed); //~10Hz to m/s
-//		cout << "Speed: " << (glm::length(velocity) * 10 - minSpeed)  / (maxSpeed - minSpeed) << '\n';
-		glm::vec3 curColor = ((maxColor - minColor) * velLerpVal) + minColor;
-		
-		for (int i = 0; i < 18; i++) 
-		{
-			g_color_buffer_data.push_back(curColor.x);
-			g_color_buffer_data.push_back(curColor.y);
-			g_color_buffer_data.push_back(curColor.z);
-		}
+			g_vertex_buffer_data.push_back(prevSup2.x); // prev sup 2
+			g_vertex_buffer_data.push_back(prevSup2.y);
+			g_vertex_buffer_data.push_back(prevSup2.z);
 
+			g_vertex_buffer_data.push_back(curSup2.x); // cur sup 2
+			g_vertex_buffer_data.push_back(curSup2.y);
+			g_vertex_buffer_data.push_back(curSup2.z);
+			
+			//COLOR COLOR COLOR
+
+			float velLerpVal = (glm::length(velocity) * 10 - minSpeed) / (maxSpeed - minSpeed); //~10Hz to m/s
+			glm::vec3 curColor = ((maxColor - minColor) * velLerpVal) + minColor;
+
+			for (int i = 0; i < 18; i++)
+			{
+				g_color_buffer_data.push_back(curColor.x);
+				g_color_buffer_data.push_back(curColor.y);
+				g_color_buffer_data.push_back(curColor.z);
+			}
+//		}
+//		else
+//		{
+			cameraSpots.push_back(glm::vec3(currentPoint->x, currentPoint->y, currentPoint->z));
+//		}
 		prevPoint = currentPoint;
 		currentPoint = currentPoint->next; 
 
 		prevMain = curMain;
 		prevSup1 = curSup1;
 		prevSup2 = curSup2;
+
+		if (g_color_buffer_data.size() > 1000)
+			break;
 	}
+
+//	cout << "cam x " << camera.Position.x << " float y " << camera.Position.y << " float z " << camera.Position.z << '\n';
 
 	GLuint vertexbuffer;
 	glGenBuffers(1, &vertexbuffer);
@@ -401,7 +323,7 @@ int main(void)
 	glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * g_color_buffer_data.size(), &g_color_buffer_data[0], GL_STATIC_DRAW);
 
-
+	cout << " size " << g_vertex_buffer_data.size();
 	do {
 		// per-frame time logic
 		// --------------------
@@ -481,10 +403,24 @@ int main(void)
 	return 0;
 }
 
+//used to ensure mouseclick happens only once
+static int oldState = GLFW_RELEASE;
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow *window)
 {
+	
+	//ensure mouseclick happens only once
+	int newState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+	if (newState == GLFW_RELEASE && oldState == GLFW_PRESS) {
+		cameraSpotIndex++;
+		if (cameraSpotIndex > cameraSpots.size() - 1)
+			cameraSpotIndex = 0;
+		camera.Position = cameraSpots[cameraSpotIndex];
+//		cout << "cam spot x: " << cameraSpots[cameraSpotIndex].x << '\n';
+	} 
+	oldState = newState;
+	
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 
@@ -496,6 +432,10 @@ void processInput(GLFWwindow *window)
 		camera.ProcessKeyboard(LEFT, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		camera.ProcessKeyboard(RIGHT, deltaTime);
+//	if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
+		
+//	}
+
 }
 
 // glfw: whenever the mouse moves, this callback is called
