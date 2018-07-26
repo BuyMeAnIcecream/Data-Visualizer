@@ -94,7 +94,6 @@ Point* parseFolderContent(std::string path)
 		removeCharsFromString(input, "[],");
 		//since it's a beginning of a new file
 		newPath = true;
-		cout << "here: ";
 		do{
 			t = grabDouble(input);
 			x = grabDouble(input);
@@ -105,15 +104,12 @@ Point* parseFolderContent(std::string path)
 			
 			if (newPath)
 				newPath = false;
-			
-//			cout << " " << currentPoint->x<<'\n';
+
 			currentPoint = currentPoint->next;
-			count++;
+
 		} while (pos = input.find(' ') != std::string::npos);
-		cout << count << "count";
 		
 	}
-	cout << "here: " << t;
 	return head;
 }
 

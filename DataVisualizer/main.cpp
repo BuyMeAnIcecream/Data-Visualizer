@@ -65,14 +65,8 @@ int main(void)
 	cout << std::setprecision(20);
 	string folderPath = ("data/");
 	head = parseFolderContent(folderPath);
-
 	currentPoint = head;
-/*	while (currentPoint->next != nullptr)
-	{
-		currentPoint = currentPoint->next;
-		cout << "time: " << currentPoint->time << " x: " << currentPoint->x << " y: " << currentPoint->y << " z: " << currentPoint->z << '\n';
-	}
-*/
+
 	// Initialise GLFW
 	if (!glfwInit())
 	{
@@ -141,11 +135,11 @@ int main(void)
 	
 	glm::vec3 const minColor(0.329, 0.066, 0.450); //brown
 	glm::vec3 const maxColor(1, 0.823, 0.101); //purple
-//	float const offsetX = 0.06f;
-//	float const offsetY = 0.12f;
+	float const offsetX = 0.06f;
+	float const offsetY = 0.12f;
 
-	float const offsetX = 1.0f;
-	float const offsetY = 2.0f;
+//	float const offsetX = 1.0f;
+//	float const offsetY = 2.0f;
 	//current triangle
 	//actual point
 	glm::vec3 curMain = glm::vec3(0, 0, 0);
@@ -162,16 +156,41 @@ int main(void)
 	glm::vec3 rotation = glm::vec3(0, 0, 0);
 	glm::vec3 unitRot = glm::vec3(0, 0, 0);
 	
+
+	velocity = glm::vec3(curMain.x - prevMain.x, curMain.y - prevMain.y, curMain.z - prevMain.z);
+	rotation = glm::cross(velocity, glm::vec3(0, 1.0f, 0));
+	unitRot = glm::normalize(rotation);
+
+	//support coord 1
+	curSup1.x = -unitRot.x * offsetX;
+	curSup1.y = -offsetY;
+	curSup1.z = -unitRot.z * offsetX;
+
+	//support coord 2
+	curSup2.x = unitRot.x * offsetX;
+	curSup2.y = -offsetY;
+	curSup2.z = unitRot.z * offsetX;
+
 	//move cam to the 1st point
 
 	currentPoint = head->next;
 	Point* prevPoint = head;
- 
-	while (currentPoint != nullptr) {
-		//main value of location
-		curMain.x = prevMain.x + (float)(currentPoint->x - prevPoint->x);
-		curMain.y = prevMain.y + (float)(currentPoint->y - prevPoint->y);
-		curMain.z = prevMain.z + (float)(currentPoint->z - prevPoint->z);
+
+//	cout << "x: " << head->x << " y: " << head->y << " z: " << head->z << '\n';
+	while (currentPoint != NULL) {
+
+		if (!currentPoint->newPath)
+		{
+			//main value of location
+			curMain.x = prevMain.x + (float)(currentPoint->x - prevPoint->x);
+			curMain.y = prevMain.y + (float)(currentPoint->y - prevPoint->y);
+			curMain.z = prevMain.z + (float)(currentPoint->z - prevPoint->z);
+		}
+		else
+		{
+			//uncomment for loolz
+//			curMain = glm::vec3(0,0,0);
+		}
 	
 		//we want every triangle to be rotated in the direction of following one 
 		velocity = glm::vec3(curMain.x - prevMain.x, curMain.y - prevMain.y, curMain.z - prevMain.z);
@@ -188,6 +207,7 @@ int main(void)
 		curSup2.y = curMain.y - offsetY;
 		curSup2.z = curMain.z + unitRot.z * offsetX;
 
+//		cout << "x: " << curMain.x << " y: " << curMain.y << " z: " << curMain.z << '\n';// << std::to_string(currentPoint);
 	/*
 		//main coord
 		g_vertex_buffer_data.push_back(curMain.x); 
@@ -205,8 +225,8 @@ int main(void)
 		g_vertex_buffer_data.push_back(curSup2.z);
 */
 		//don't render, if this is a new path
-//		if (!currentPoint->newPath)
-//		{
+		if (!currentPoint->newPath)
+		{
 
 			//SIDE ONE
 			g_vertex_buffer_data.push_back(curMain.x); //cur main
@@ -295,11 +315,11 @@ int main(void)
 				g_color_buffer_data.push_back(curColor.y);
 				g_color_buffer_data.push_back(curColor.z);
 			}
-//		}
-//		else
-//		{
-			cameraSpots.push_back(glm::vec3(currentPoint->x, currentPoint->y, currentPoint->z));
-//		}
+		}
+		else
+		{
+			cameraSpots.push_back(glm::vec3(curMain.x, curMain.y, curMain.z));
+		}
 		prevPoint = currentPoint;
 		currentPoint = currentPoint->next; 
 
@@ -307,8 +327,8 @@ int main(void)
 		prevSup1 = curSup1;
 		prevSup2 = curSup2;
 
-		if (g_color_buffer_data.size() > 1000)
-			break;
+//		if (g_color_buffer_data.size() > 1000)
+//			break;
 	}
 
 //	cout << "cam x " << camera.Position.x << " float y " << camera.Position.y << " float z " << camera.Position.z << '\n';

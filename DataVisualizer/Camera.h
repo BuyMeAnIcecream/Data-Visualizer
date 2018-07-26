@@ -18,7 +18,7 @@ enum Camera_Movement {
 // Default camera values
 const float YAW = -90.0f;
 const float PITCH = 0.0f;
-const float SPEED = 45.0f;
+const float SPEED = 4.5f;
 const float SENSITIVITY = 0.1f;
 const float ZOOM = 45.0f;
 
@@ -78,6 +78,8 @@ public:
 			Position -= Right * velocity;
 		if (direction == RIGHT)
 			Position += Right * velocity;
+		cout << "Direction: " << direction << "\nDeltaTime: " << deltaTime << "\nVelocity: " << velocity << "\nRight = X: " << Right.x << " Y: " << Right.y << " Z: " << Right.z << "\nPosition = X" << Position.x << " Y: " << Position.y << " Z: " << Position.z << endl;
+		glm::vec3 newPosition = Position - Right;
 	}
 
 	// Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
