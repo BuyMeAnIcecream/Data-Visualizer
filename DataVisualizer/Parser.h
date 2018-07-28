@@ -15,12 +15,20 @@
 #include <filesystem>
 namespace fs = std::experimental::filesystem::v1;
 
+//used for finding the velocity
+long double prevX = 0;
+long double prevY = 0;
+long double prevZ = 0;
+
+
 struct Point {
 	long double time;
 	long double x;
 	long double y;
 	long double z;
 	bool newPath;
+	float velMagn;
+	glm::vec3 velRaw;
 
 	Point* next;
 
@@ -32,7 +40,8 @@ struct Point {
 		z = Z;
 		next = nullptr;
 		newPath = NewPath;
-
+		velRaw = glm::vec3(x - prevX, y - prevY, z - prevZ);
+		velMagn = sqrt(pow(x - prevX, 2) + pow(y - prevY, 2) + pow(z - prevZ, 2)) * 10; //~10Hz
 	}
 };
 
@@ -64,7 +73,7 @@ double grabDouble(std::string &from)
 	return grabbedDoub;
 }
 
-Point* parseFolderContent(std::string path)
+Point* parseFolderContent(std::string path, float& minSpeed, float& maxSpeed)
 {
 	int count = 1;
 	Point* head = nullptr;
@@ -94,19 +103,29 @@ Point* parseFolderContent(std::string path)
 		removeCharsFromString(input, "[],");
 		//since it's a beginning of a new file
 		newPath = true;
-		do{
+		do {
 			t = grabDouble(input);
 			x = grabDouble(input);
 			y = grabDouble(input);
 			z = grabDouble(input);
 
 			currentPoint->next = new Point(t, x, y, z, newPath);
-			
+
 			if (newPath)
 				newPath = false;
-
+			else
+			{
+				if (maxSpeed < currentPoint->next->velMagn)
+					maxSpeed = currentPoint->next->velMagn;
+				else if (minSpeed > currentPoint->next->velMagn)
+					minSpeed = currentPoint->next->velMagn;
+			}
+			
 			currentPoint = currentPoint->next;
 
+			prevX = x;
+			prevY = y;
+			prevZ = z;
 		} while (pos = input.find(' ') != std::string::npos);
 		
 	}

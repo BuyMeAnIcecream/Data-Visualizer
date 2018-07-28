@@ -59,14 +59,20 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 
+
+float maxSpeed = 0; // m/s 
+float minSpeed = 100;
+
+
 int main(void)
 {
 	//how else do I debug all these beatiful tiny fractions of space... 
 	cout << std::setprecision(20);
 	string folderPath = ("data/");
-	head = parseFolderContent(folderPath);
+	head = parseFolderContent(folderPath, minSpeed, maxSpeed);
 	currentPoint = head;
-
+	cout << "min spd: " << minSpeed << endl;
+	cout << "max spd: " << maxSpeed << endl;
 	// Initialise GLFW
 	if (!glfwInit())
 	{
@@ -127,11 +133,7 @@ int main(void)
 
 	std::vector<float> g_vertex_buffer_data;
 	std::vector<float> g_color_buffer_data;
-	
-	//I assumed MAX car speed is 60 km/hour, which is
-	float const maxSpeed = 16.6667f ; // m/s 
-	
-	float const minSpeed = 0;
+
 	
 	glm::vec3 const minColor(0.329, 0.066, 0.450); //brown
 	glm::vec3 const maxColor(1, 0.823, 0.101); //purple
@@ -188,7 +190,7 @@ int main(void)
 		}
 		else
 		{
-			//uncomment for loolz
+			//uncomment to draw all paths from 0
 //			curMain = glm::vec3(0,0,0);
 		}
 	
@@ -306,7 +308,7 @@ int main(void)
 			
 			//COLOR COLOR COLOR
 
-			float velLerpVal = (glm::length(velocity) * 10 - minSpeed) / (maxSpeed - minSpeed); //~10Hz to m/s
+			float velLerpVal = (currentPoint->velMagn - minSpeed) / (maxSpeed - minSpeed); //~10Hz to m/s
 			glm::vec3 curColor = ((maxColor - minColor) * velLerpVal) + minColor;
 
 			for (int i = 0; i < 18; i++)
@@ -320,6 +322,7 @@ int main(void)
 		{
 			cameraSpots.push_back(glm::vec3(curMain.x, curMain.y, curMain.z));
 		}
+		delete prevPoint;
 		prevPoint = currentPoint;
 		currentPoint = currentPoint->next; 
 
@@ -429,7 +432,6 @@ static int oldState = GLFW_RELEASE;
 // ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow *window)
 {
-	
 	//ensure mouseclick happens only once
 	int newState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
 	if (newState == GLFW_RELEASE && oldState == GLFW_PRESS) {
@@ -437,13 +439,11 @@ void processInput(GLFWwindow *window)
 		if (cameraSpotIndex > cameraSpots.size() - 1)
 			cameraSpotIndex = 0;
 		camera.Position = cameraSpots[cameraSpotIndex];
-//		cout << "cam spot x: " << cameraSpots[cameraSpotIndex].x << '\n';
 	} 
 	oldState = newState;
 	
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
-
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 		camera.ProcessKeyboard(FORWARD, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -452,10 +452,6 @@ void processInput(GLFWwindow *window)
 		camera.ProcessKeyboard(LEFT, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		camera.ProcessKeyboard(RIGHT, deltaTime);
-//	if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
-		
-//	}
-
 }
 
 // glfw: whenever the mouse moves, this callback is called
