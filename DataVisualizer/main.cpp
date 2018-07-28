@@ -159,8 +159,8 @@ int main(void)
 	glm::vec3 unitRot = glm::vec3(0, 0, 0);
 	
 
-	velocity = glm::vec3(curMain.x - prevMain.x, curMain.y - prevMain.y, curMain.z - prevMain.z);
-	rotation = glm::cross(velocity, glm::vec3(0, 1.0f, 0));
+//	velocity = glm::vec3(curMain.x - prevMain.x, curMain.y - prevMain.y, curMain.z - prevMain.z);
+	rotation = glm::cross(glm::vec3(0, 0, 0), glm::vec3(0, 1.0f, 0));
 	unitRot = glm::normalize(rotation);
 
 	//support coord 1
@@ -195,7 +195,7 @@ int main(void)
 		}
 	
 		//we want every triangle to be rotated in the direction of following one 
-		velocity = glm::vec3(curMain.x - prevMain.x, curMain.y - prevMain.y, curMain.z - prevMain.z);
+//		velocity = glm::vec3(curMain.x - prevMain.x, curMain.y - prevMain.y, curMain.z - prevMain.z);
 		rotation = glm::cross(velocity, glm::vec3(0, 1.0f, 0));
 		unitRot = glm::normalize(rotation);
 
