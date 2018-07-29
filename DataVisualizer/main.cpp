@@ -230,7 +230,7 @@ int main(void)
 		//don't render, if this is a new path
 		if (!currentPoint->newPath)
 		{
-
+/*
 			//SIDE ONE
 			g_vertex_buffer_data.push_back(curMain.x); //cur main
 			g_vertex_buffer_data.push_back(curMain.y);
@@ -280,7 +280,7 @@ int main(void)
 			g_vertex_buffer_data.push_back(curSup2.x); // cur sup 2
 			g_vertex_buffer_data.push_back(curSup2.y);
 			g_vertex_buffer_data.push_back(curSup2.z);
-
+*/
 			//BOTTOM
 
 			g_vertex_buffer_data.push_back(curSup1.x); //cur sup 1
@@ -312,7 +312,7 @@ int main(void)
 			float velLerpVal = (currentPoint->velMagn - minSpeed) / (maxSpeed - minSpeed); //~10Hz to m/s
 			glm::vec3 curColor = ((maxColor - minColor) * velLerpVal) + minColor;
 
-			for (int i = 0; i < 18; i++)
+			for (int i = 0; i < 6; i++)
 			{
 				g_color_buffer_data.push_back(curColor.x);
 				g_color_buffer_data.push_back(curColor.y);
