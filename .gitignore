@@ -12,8 +12,11 @@
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
+#Logs 
+[Dd]ebug/DataVisualizer.tlog
+
 # Build results
-[Dd]ebug/
+#[Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
@@ -328,3 +331,4 @@ ASALocalRun/
 
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
+DataVisualizer/Debug/DataVisualizer.tlog/

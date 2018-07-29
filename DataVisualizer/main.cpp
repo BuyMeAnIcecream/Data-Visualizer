@@ -45,6 +45,10 @@ size_t cameraSpotIndex = 0;
 const unsigned int SCR_WIDTH = 1024;
 const unsigned int SCR_HEIGHT = 768;
 
+//speed initial values, since we'll find out the right one programmatically
+float maxSpeed = 0; // m/s 
+float minSpeed = 100.0f; 
+
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 float lastX = SCR_WIDTH / 2.0f;
@@ -59,20 +63,16 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 
-
-float maxSpeed = 0; // m/s 
-float minSpeed = 100;
-
-
 int main(void)
 {
 	//how else do I debug all these beatiful tiny fractions of space... 
 	cout << std::setprecision(20);
 	string folderPath = ("data/");
 	head = parseFolderContent(folderPath, minSpeed, maxSpeed);
-	currentPoint = head;
 	cout << "min spd: " << minSpeed << endl;
 	cout << "max spd: " << maxSpeed << endl;
+	currentPoint = head;
+
 	// Initialise GLFW
 	if (!glfwInit())
 	{
@@ -88,7 +88,7 @@ int main(void)
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	// Open a window and create its OpenGL context
-	window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Tutorial 04 - Colored Cube", NULL, NULL);
+	window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Data Visualizer", NULL, NULL);
 	if (window == NULL) {
 		fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
 		getchar();
@@ -133,6 +133,7 @@ int main(void)
 
 	std::vector<float> g_vertex_buffer_data;
 	std::vector<float> g_color_buffer_data;
+	
 
 	
 	glm::vec3 const minColor(0.329, 0.066, 0.450); //brown
@@ -159,8 +160,8 @@ int main(void)
 	glm::vec3 unitRot = glm::vec3(0, 0, 0);
 	
 
-//	velocity = glm::vec3(curMain.x - prevMain.x, curMain.y - prevMain.y, curMain.z - prevMain.z);
-	rotation = glm::cross(glm::vec3(0, 0, 0), glm::vec3(0, 1.0f, 0));
+	velocity = glm::vec3(curMain.x - prevMain.x, curMain.y - prevMain.y, curMain.z - prevMain.z);
+	rotation = glm::cross(velocity, glm::vec3(0, 1.0f, 0));
 	unitRot = glm::normalize(rotation);
 
 	//support coord 1
@@ -190,13 +191,13 @@ int main(void)
 		}
 		else
 		{
-			//uncomment to draw all paths from 0
+			//uncomment for loolz
 //			curMain = glm::vec3(0,0,0);
 		}
 	
 		//we want every triangle to be rotated in the direction of following one 
 //		velocity = glm::vec3(curMain.x - prevMain.x, curMain.y - prevMain.y, curMain.z - prevMain.z);
-		rotation = glm::cross(velocity, glm::vec3(0, 1.0f, 0));
+		rotation = glm::cross(currentPoint->velRaw, glm::vec3(0, 1.0f, 0));
 		unitRot = glm::normalize(rotation);
 
 		//support coord 1
@@ -322,6 +323,7 @@ int main(void)
 		{
 			cameraSpots.push_back(glm::vec3(curMain.x, curMain.y, curMain.z));
 		}
+		//clean mem a bit
 		delete prevPoint;
 		prevPoint = currentPoint;
 		currentPoint = currentPoint->next; 
@@ -432,6 +434,7 @@ static int oldState = GLFW_RELEASE;
 // ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow *window)
 {
+	
 	//ensure mouseclick happens only once
 	int newState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
 	if (newState == GLFW_RELEASE && oldState == GLFW_PRESS) {
@@ -439,11 +442,13 @@ void processInput(GLFWwindow *window)
 		if (cameraSpotIndex > cameraSpots.size() - 1)
 			cameraSpotIndex = 0;
 		camera.Position = cameraSpots[cameraSpotIndex];
+//		cout << "cam spot x: " << cameraSpots[cameraSpotIndex].x << '\n';
 	} 
 	oldState = newState;
 	
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
+
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 		camera.ProcessKeyboard(FORWARD, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -452,6 +457,10 @@ void processInput(GLFWwindow *window)
 		camera.ProcessKeyboard(LEFT, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		camera.ProcessKeyboard(RIGHT, deltaTime);
+//	if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
+		
+//	}
+
 }
 
 // glfw: whenever the mouse moves, this callback is called

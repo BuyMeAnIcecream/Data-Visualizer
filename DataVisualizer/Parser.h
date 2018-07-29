@@ -15,11 +15,10 @@
 #include <filesystem>
 namespace fs = std::experimental::filesystem::v1;
 
-//used for finding the velocity
+//used for calculating the velocity
 long double prevX = 0;
 long double prevY = 0;
 long double prevZ = 0;
-
 
 struct Point {
 	long double time;
@@ -103,14 +102,14 @@ Point* parseFolderContent(std::string path, float& minSpeed, float& maxSpeed)
 		removeCharsFromString(input, "[],");
 		//since it's a beginning of a new file
 		newPath = true;
-		do {
+		do{
 			t = grabDouble(input);
 			x = grabDouble(input);
 			y = grabDouble(input);
 			z = grabDouble(input);
 
 			currentPoint->next = new Point(t, x, y, z, newPath);
-
+			
 			if (newPath)
 				newPath = false;
 			else
@@ -120,7 +119,6 @@ Point* parseFolderContent(std::string path, float& minSpeed, float& maxSpeed)
 				else if (minSpeed > currentPoint->next->velMagn)
 					minSpeed = currentPoint->next->velMagn;
 			}
-			
 			currentPoint = currentPoint->next;
 
 			prevX = x;
