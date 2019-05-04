@@ -67,7 +67,7 @@ int main(void)
 {
 	//how else do I debug all these beatiful tiny fractions of space... 
 	cout << std::setprecision(20);
-	string folderPath = ("data/");
+	const string folderPath = ("data/");
 	head = parseFolderContent(folderPath, minSpeed, maxSpeed);
 	cout << "min spd: " << minSpeed << endl;
 	cout << "max spd: " << maxSpeed << endl;
